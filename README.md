@@ -5,14 +5,15 @@
 * the raw competition data sets can be found in data/challenge
 * we standardized the data sets and saved them to data/derived (ready for ML)
 * we implemented a torch_geometric data set able to return the data in different variations:
-  * mode ("binary", "continuous"): affects the label format
-  * use_absorbance (bool): whether continuous transmittance values should be transformed using the 
-    formula $-\log(\mathrm{transmittance}/100)$
-  * use_plate_indices (bool): adds plate indices if true (note: can only be used on 
+  * `mode` ("binary", "continuous"): affects the label format
+  * `use_absorbance` (bool): whether continuous transmittance values should be transformed using 
+    the formula $-\log(\mathrm{transmittance}/100)$
+  * `use_plate_indices` (bool): adds plate indices if true (note: can only be used on 
     training and leaderboard data)
-  * normalize_by_plate (bool): normalized labels by subtracting plate mean label and dividing by 
-    standard deviation 
-  * normalize_labels (bool): subtract overall label mean and divide by standard deviation
+  * `normalize_by_plate` (bool): normalized labels by subtracting plate mean label and dividing by 
+    standard deviation (note: can only be used on training and leaderboard data)
+  * `normalize_labels` (bool): subtract overall label mean and divide by standard deviation (note:
+    can only be used on training and leaderboard data)
 * multiple ML models were trained according to training protocols in euos25/training
 * the final model is an ensemble containing
   * a matrix factorization model (model_1)
