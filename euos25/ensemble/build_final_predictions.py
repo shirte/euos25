@@ -39,6 +39,14 @@ for label in label_columns:
         for path in glob.glob(str(PROJECT_ROOT / "models" / "single" / label / "*"))
     ]
 
+# true labels
+df_train = pd.read_csv(str(PROJECT_ROOT / "data" / "derived" / "df_train.csv"))
+df_leaderboard = pd.read_csv(
+    str(PROJECT_ROOT / "data" / "derived" / "df_leaderboard.csv")
+)
+columns = ["id"] + label_columns
+df_train_plus_leaderboard = pd.concat([df_train[columns], df_leaderboard[columns]])
+
 
 def model_dir(model_id: int, fold: Optional[int] = None) -> Path:
     model_name = f"model_{model_id}"
@@ -125,6 +133,58 @@ def predict(model_id: int, fold: int, subset="val", ranks=False) -> pd.DataFrame
     return df_predictions
 
 
+def predict_individual(
+    task: str, model_id: str, fold: int, subset="val"
+) -> pd.DataFrame:
+    if subset == "val":
+        predictions_oof_path = (
+            PROJECT_ROOT
+            / "models"
+            / "single"
+            / task
+            / model_id
+            / f"{model_id}_kfolds_eval_preds.csv"
+        )
+    elif subset == "submission":
+        predictions_oof_path = (
+            PROJECT_ROOT
+            / "models"
+            / "single"
+            / task
+            / model_id
+            / f"{model_id}_kfold_{fold + 1}_test_preds.csv"
+        )
+
+    df_predictions = pd.read_csv(str(predictions_oof_path)).rename(
+        columns={"y_proba": "y_pred", "id": "mol_id"}
+    )
+
+    if subset == "val":
+        df_predictions = (
+            df_predictions[df_predictions.fold == fold + 1]
+            .merge(
+                df_train_plus_leaderboard[["id", task]].rename(
+                    columns={task: "y_true"}
+                ),
+                left_on="mol_id",
+                right_on="id",
+                how="left",
+            )
+            .drop(columns=["id"])
+        )
+
+    df_predictions = df_predictions.assign(task=task)
+
+    # rank predictions
+    df_predictions = df_predictions.assign(
+        y_pred=lambda df: df.groupby("task").y_pred.transform(
+            lambda x: x.rank(method="average", pct=True)
+        )
+    )
+
+    return df_predictions
+
+
 def eval(df_predictions) -> pd.DataFrame:
     def _mcc(y_true, y_pred):
         # find best threshold
@@ -198,14 +258,22 @@ def eval_model(model_id) -> pd.DataFrame:
                 / extra_model_name
                 / f"{extra_model_name}_kfolds_eval_preds.csv"
             )
-            .rename(columns={"y_proba": "y_pred", "id": "mol_id", "y_class": "y_true"})
+            .rename(columns={"y_proba": "y_pred", "id": "mol_id"})
             .assign(
                 task=task,
                 y_pred=lambda df: df.groupby("fold").y_pred.transform(
                     lambda x: x.rank(method="average", pct=True)
                 ),
             )
-            .drop(columns=["fold", "model"])
+            .merge(
+                df_train_plus_leaderboard[["id", task]].rename(
+                    columns={task: "y_true"}
+                ),
+                left_on="mol_id",
+                right_on="id",
+                how="left",
+            )
+            .drop(columns=["fold", "model", "y_class"])
         )
 
     return eval(df_predictions)
@@ -222,6 +290,11 @@ if __name__ == "__main__":
     # generate oof metrics per model
     df_oof_metrics = pd.concat(
         [eval_model(model_id).assign(model_id=model_id) for model_id in model_ids]
+        + [
+            eval_model((task, extra_model_id)).assign(model_id=extra_model_id)
+            for task in label_columns
+            for extra_model_id in extra_model_ids[task]
+        ]
     )
 
     # compute model weights
@@ -234,7 +307,9 @@ if __name__ == "__main__":
             .apply(lambda x: np.exp(alpha * (x - max_auc)))
             .sum()
         )
-        for model_id in model_ids:
+        for model_id in df_oof_metrics[df_oof_metrics.task == task][
+            "model_id"
+        ].unique():
             auc = df_oof_metrics[
                 (df_oof_metrics.model_id == model_id) & (df_oof_metrics.task == task)
             ]["auc"].values[0]
@@ -254,15 +329,28 @@ if __name__ == "__main__":
     print(df_oof_metrics.sort_values(["task", "auc"], ascending=[True, False]))
 
     # generate ensemble predictions
-    df_predictions = pd.concat(
-        [
-            predict(model_id=model_id, fold=fold, ranks=True).assign(
-                model_id=model_id, fold=fold
-            )
-            for model_id in model_ids
-            for fold in folds
-        ]
-    )
+    dfs_predictions = [
+        predict(model_id=model_id, fold=fold, ranks=True).assign(
+            model_id=model_id, fold=fold
+        )
+        for model_id in model_ids
+        for fold in folds
+    ]
+
+    # add single-task models
+    for task in label_columns:
+        for extra_model_id in extra_model_ids[task]:
+            for fold in folds:
+                df_preds = predict_individual(
+                    task=task,
+                    model_id=extra_model_id,
+                    fold=fold,
+                    subset="val",
+                ).assign(model_id=extra_model_id, fold=fold)
+                dfs_predictions.append(df_preds)
+
+    df_predictions = pd.concat(dfs_predictions)
+
     df_true = df_predictions[["mol_id", "task", "y_true"]].drop_duplicates()
     df_predictions = (
         df_predictions.merge(
@@ -280,15 +368,28 @@ if __name__ == "__main__":
 
     # generate submission predictions
     print("Predict test set")
-    df_predictions_submission = pd.concat(
-        [
-            predict(
-                model_id=model_id, fold=fold, subset="submission", ranks=True
-            ).assign(model_id=model_id, fold=fold)
-            for model_id in model_ids
-            for fold in folds
-        ]
-    )
+    dfs_predictions_submission = [
+        predict(model_id=model_id, fold=fold, subset="submission", ranks=True).assign(
+            model_id=model_id, fold=fold
+        )
+        for model_id in model_ids
+        for fold in folds
+    ]
+
+    # add single-task models
+    for task in label_columns:
+        for extra_model_id in extra_model_ids[task]:
+            for fold in folds:
+                df_preds = predict_individual(
+                    task=task,
+                    model_id=extra_model_id,
+                    fold=fold,
+                    subset="submission",
+                ).assign(model_id=extra_model_id, fold=fold)
+                dfs_predictions_submission.append(df_preds)
+
+    df_predictions_submission = pd.concat(dfs_predictions_submission)
+
     df_predictions_submission = (
         df_predictions_submission.merge(
             df_oof_metrics[["model_id", "task", "weight"]], on=["model_id", "task"]
