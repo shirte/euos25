@@ -30,6 +30,8 @@ molecules (including test set) uses structural information only.
 # clone repository
 git clone https://github.com/shirte/euos25.git
 
+# provide Python=3.12 (e.g. via conda or similar)
+
 # install repository
 cd euos25
 poetry install
