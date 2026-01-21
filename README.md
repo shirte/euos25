@@ -7,7 +7,7 @@
 * we implemented a torch_geometric data set able to return the data in different variations:
   * mode ("binary", "continuous"): affects the label format
   * use_absorbance (bool): whether continuous transmittance values should be transformed using the 
-    formula $-np.log(\mathrm{transmittance}/100)$
+    formula $-\log(\mathrm{transmittance}/100)$
   * use_plate_indices (bool): adds plate indices if true (note: can only be used on 
     training and leaderboard data)
   * normalize_by_plate (bool): normalized labels by subtracting plate mean label and dividing by 
