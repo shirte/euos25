@@ -17,10 +17,12 @@
 * multiple ML models were trained according to training protocols in euos25/training
 * the final model is an ensemble containing
   * a matrix factorization model (model_1)
-  * multiple NeuMF models (model_2, model_3, model_4, model_5)
+  * multiple Neural Matrix Factorization (NeuMF) models (model_2, model_3, model_4, model_5)
   * multiple single-task models (see models/single/$task for prediction files)
+* matrix factorization is a multitask architecture that can train on a combination of the given 
+  transmittance and fluorescense data sets simultaneously
 * parameters for the matrix factorization models are specified in euos25/ensemble/model_$i.py
-* parameters for the single-task models can be found in https://github.com/KdDiedrich/euos25_challenge
+* parameters for the single-task models can be found in https://github.com/KdDiedrich/euos25challenge
 
 Note: plate information is only used for training and leaderboard compounds. Prediction on new
 molecules (including test set) uses structural information only. 
