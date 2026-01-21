@@ -1,0 +1,6 @@
+model,fold,auc
+fmulti_cb_morganfp_desc2D,1,0.5921666658993848
+fmulti_cb_morganfp_desc2D,2,0.6538116261618566
+fmulti_cb_morganfp_desc2D,3,0.5570604510696677
+fmulti_cb_morganfp_desc2D,4,0.5980430071883267
+fmulti_cb_morganfp_desc2D,5,0.5204047807591021

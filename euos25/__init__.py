@@ -1,0 +1,10 @@
+from .paths import CHALLENGE_DATA_DIR, DATA_DIR, MODEL_DIR, PACKAGE_ROOT, PROJECT_ROOT
+
+__all__ = [
+    "PROJECT_ROOT",
+    "PACKAGE_ROOT",
+    "DATA_DIR",
+    "CHALLENGE_DATA_DIR",
+    "DERIVED_DATA_DIR",
+    "MODEL_DIR",
+]

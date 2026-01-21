@@ -1,0 +1,6 @@
+model,fold,auc
+fmulti_cb_rdkitfp_desc2D,1,0.6634671012551197
+fmulti_cb_rdkitfp_desc2D,2,0.5035901118850428
+fmulti_cb_rdkitfp_desc2D,3,0.5621782211643962
+fmulti_cb_rdkitfp_desc2D,4,0.6541315997863759
+fmulti_cb_rdkitfp_desc2D,5,0.5185954218154362

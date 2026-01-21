@@ -1,0 +1,6 @@
+model,fold,auc
+t340_hgb_rdkitfp_desc2D,1,0.8585750654737374
+t340_hgb_rdkitfp_desc2D,2,0.8549269956749665
+t340_hgb_rdkitfp_desc2D,3,0.8631695132786501
+t340_hgb_rdkitfp_desc2D,4,0.8446640496483023
+t340_hgb_rdkitfp_desc2D,5,0.850589667860665

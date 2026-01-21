@@ -1,0 +1,6 @@
+model,fold,auc
+fmulti_xgb_maccskeys,1,0.5280119266294382
+fmulti_xgb_maccskeys,2,0.6046303926488259
+fmulti_xgb_maccskeys,3,0.44176330581860535
+fmulti_xgb_maccskeys,4,0.5783833017194281
+fmulti_xgb_maccskeys,5,0.6009772686813626
